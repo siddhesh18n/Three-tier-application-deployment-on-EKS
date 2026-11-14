@@ -1,0 +1,28 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: platformdb
+      POSTGRES_USER: platform
+      POSTGRES_PASSWORD: local-dev-password
+    volumes: ["postgres_data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U platform -d platformdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  backend:
+    build: ./app/backend
+    environment:
+      DB_HOST: db
+      DB_NAME: platformdb
+      DB_USER: platform
+      DB_PASSWORD: local-dev-password
+    depends_on:
+      db: {condition: service_healthy}
+  frontend:
+    build: ./app/frontend
+    ports: ["8080:8080"]
+    depends_on: [backend]
+volumes:
+  postgres_data:

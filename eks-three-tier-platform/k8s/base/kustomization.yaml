@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - storageclass.yaml
+  - configmap.yaml
+  - postgres.yaml
+  - backend.yaml
+  - frontend.yaml
+  - servicemonitor.yaml
+images:
+  - name: ghcr.io/OWNER/REPOSITORY-backend
+    newTag: latest
+  - name: ghcr.io/OWNER/REPOSITORY-frontend
+    newTag: latest

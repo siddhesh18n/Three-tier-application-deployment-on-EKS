@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: three-tier
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: backend } }
+  template:
+    metadata:
+      labels: { app: backend }
+      annotations: { prometheus.io/scrape: "true", prometheus.io/port: "3000", prometheus.io/path: "/metrics" }
+    spec:
+      containers:
+        - name: backend
+          image: ghcr.io/OWNER/REPOSITORY-backend:latest
+          imagePullPolicy: Always
+          ports: [{ name: http, containerPort: 3000 }]
+          envFrom: [{ configMapRef: { name: backend-config } }]
+          env: [{ name: DB_PASSWORD, valueFrom: { secretKeyRef: { name: database-secret, key: DB_PASSWORD } } }]
+          readinessProbe: { httpGet: { path: /ready, port: http }, initialDelaySeconds: 10, periodSeconds: 5 }
+          livenessProbe: { httpGet: { path: /health, port: http }, initialDelaySeconds: 20, periodSeconds: 10 }
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: three-tier
+  labels: { app: backend }
+spec:
+  selector: { app: backend }
+  ports: [{ name: http, port: 3000, targetPort: http }]
